@@ -1,0 +1,79 @@
+{
+  "name": "wedding-invitations/wp-plugin",
+  "description": "نظام إدارة دعوات الزفاف والمناسبات لـ WordPress",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "فريق التطوير",
+      "email": "info@example.com"
+    }
+  ],
+  "keywords": [
+    "wordpress",
+    "plugin",
+    "wedding",
+    "invitations",
+    "arabic",
+    "rsvp"
+  ],
+  "homepage": "https://example.com",
+  "support": {
+    "issues": "https://example.com/issues",
+    "source": "https://example.com/source"
+  },
+  "require": {
+    "php": ">=7.4",
+    "composer/installers": "~1.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.0",
+    "wp-coding-standards/wpcs": "^2.3",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7"
+  },
+  "suggest": {
+    "wpackagist-plugin/contact-form-7": "لإنشاء نماذج اتصال متقدمة",
+    "wpackagist-plugin/mailchimp-for-wp": "للتكامل مع خدمات البريد الإلكتروني",
+    "wpackagist-plugin/elementor": "لإنشاء صفحات دعوات جميلة"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "allow-plugins": {
+      "composer/installers": true,
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "WeddingInvitations\\": "includes/"
+    },
+    "files": [
+      "wedding-invitations.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "WeddingInvitations\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "cs": "phpcs --standard=WordPress",
+    "cbf": "phpcbf --standard=WordPress",
+    "post-install-cmd": [
+      "echo 'تم تثبيت مكتبات إدارة دعوات الزفاف بنجاح'"
+    ]
+  },
+  "extra": {
+    "installer-name": "wedding-invitations",
+    "wordpress-install-dir": "wp-content/plugins"
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://wpackagist.org"
+    }
+  ]
+}
