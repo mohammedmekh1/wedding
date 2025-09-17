@@ -29,6 +29,11 @@ define('WEDDING_INVITATIONS_PLUGIN_FILE', __FILE__);
 define('WEDDING_INVITATIONS_PLUGIN_BASENAME', plugin_basename(__FILE__));
 define('WEDDING_INVITATIONS_TEXT_DOMAIN', 'wedding-invitations');
 
+// Include the Composer autoloader
+if (file_exists(WEDDING_INVITATIONS_PLUGIN_PATH . 'vendor/autoload.php')) {
+    require_once WEDDING_INVITATIONS_PLUGIN_PATH . 'vendor/autoload.php';
+}
+
 /**
  * Main Wedding Invitations Plugin Class
  */
@@ -82,8 +87,6 @@ class Wedding_Invitations_Plugin {
     private function load_dependencies() {
         // Core includes
         require_once WEDDING_INVITATIONS_PLUGIN_PATH . 'includes/class-database.php';
-        require_once WEDDING_INVITATIONS_PLUGIN_PATH . 'includes/class-admin.php';
-        require_once WEDDING_INVITATIONS_PLUGIN_PATH . 'includes/class-public.php';
         require_once WEDDING_INVITATIONS_PLUGIN_PATH . 'includes/class-ajax-handler.php';
 
         // Admin components
@@ -93,8 +96,10 @@ class Wedding_Invitations_Plugin {
         }
 
         // Public components
+        // Note: shortcodes can also be used in admin area, so we load it everywhere.
+        require_once WEDDING_INVITATIONS_PLUGIN_PATH . 'includes/public/class-shortcodes.php';
+
         if (!is_admin()) {
-            require_once WEDDING_INVITATIONS_PLUGIN_PATH . 'includes/public/class-shortcodes.php';
             require_once WEDDING_INVITATIONS_PLUGIN_PATH . 'includes/public/class-frontend.php';
         }
     }
@@ -105,18 +110,21 @@ class Wedding_Invitations_Plugin {
     private function init_hooks() {
         // Admin hooks
         if (is_admin()) {
-            add_action('admin_menu', array('WI_Admin_Menu', 'init'));
+            WI_Admin_Menu::init();
+            WI_Admin_Settings::init();
             add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_scripts'));
         }
 
         // Public hooks
-        add_action('wp_enqueue_scripts', array($this, 'public_enqueue_scripts'));
-        add_action('wp_ajax_wi_handle_rsvp', array('WI_Ajax_Handler', 'handle_rsvp'));
-        add_action('wp_ajax_nopriv_wi_handle_rsvp', array('WI_Ajax_Handler', 'handle_rsvp'));
+        if (!is_admin()) {
+            WI_Frontend::init();
+        }
+
+        // AJAX hooks
+        WI_Ajax_Handler::init();
 
         // Shortcodes
-        add_shortcode('wedding_invitation', array('WI_Shortcodes', 'display_invitation'));
-        add_shortcode('rsvp_form', array('WI_Shortcodes', 'display_rsvp_form'));
+        WI_Shortcodes::init();
     }
 
     /**
@@ -155,30 +163,6 @@ class Wedding_Invitations_Plugin {
         ));
     }
 
-    /**
-     * Enqueue public scripts and styles
-     */
-    public function public_enqueue_scripts() {
-        wp_enqueue_style(
-            'wedding-invitations-public',
-            WEDDING_INVITATIONS_PLUGIN_URL . 'public/css/style.css',
-            array(),
-            WEDDING_INVITATIONS_VERSION
-        );
-
-        wp_enqueue_script(
-            'wedding-invitations-public',
-            WEDDING_INVITATIONS_PLUGIN_URL . 'public/js/script.js',
-            array('jquery'),
-            WEDDING_INVITATIONS_VERSION,
-            true
-        );
-
-        wp_localize_script('wedding-invitations-public', 'wi_public', array(
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('wi_public_nonce')
-        ));
-    }
 
     /**
      * Plugin activation
@@ -254,11 +238,14 @@ class Wedding_Invitations_Plugin {
             rsvp_status enum('pending','attending','not_attending') DEFAULT 'pending',
             plus_one tinyint(1) DEFAULT 0,
             notes text,
+            qr_code_hash varchar(40) DEFAULT NULL,
+            checkin_status varchar(20) NOT NULL DEFAULT 'pending',
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY event_id (event_id),
-            UNIQUE KEY invitation_code (invitation_code)
+            UNIQUE KEY invitation_code (invitation_code),
+            UNIQUE KEY qr_code_hash (qr_code_hash)
         ) $charset_collate;";
 
         // RSVP responses table
